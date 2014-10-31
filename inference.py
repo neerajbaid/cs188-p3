@@ -249,7 +249,6 @@ class ParticleFilter(InferenceModule):
     def setNumParticles(self, numParticles):
         self.numParticles = numParticles
 
-
     def initializeUniformly(self, gameState):
         """
         Initializes a list of particles. Use self.numParticles for the number of
@@ -263,6 +262,10 @@ class ParticleFilter(InferenceModule):
         weight with each position) is incorrect and may produce errors.
         """
         "*** YOUR CODE HERE ***"
+        particles = []
+        for legalPosition in self.legalPositions:
+            particles += [legalPosition]*(self.numParticles/len(self.legalPositions))
+        self.particles = particles
 
     def observe(self, observation, gameState):
         """
@@ -295,7 +298,26 @@ class ParticleFilter(InferenceModule):
         emissionModel = busters.getObservationDistribution(noisyDistance)
         pacmanPosition = gameState.getPacmanPosition()
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        if noisyDistance is None:
+            self.particles = [self.getJailPosition()]*self.numParticles
+            return
+        relativeWeights = util.Counter()
+        beliefs = self.getBeliefDistribution()
+        allZero = True
+
+        for belief in beliefs:
+            if belief > 0:
+                allZero = False
+                break
+
+        if allZero:
+            self.initializeUniformly(gameState)
+        else:
+            for loc in self.legalPositions:
+                relativeWeights[loc] = beliefs[loc] * emissionModel[util.manhattanDistance(pacmanPosition, loc)]
+            self.particles = []
+            for loc, prob in relativeWeights.items():
+                self.particles += [loc]*int(self.numParticles*prob)
 
     def elapseTime(self, gameState):
         """
@@ -322,7 +344,12 @@ class ParticleFilter(InferenceModule):
         Counter object)
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        dist = util.Counter()
+        for particle in self.particles:
+            dist[particle] += 1
+        dist.normalize()
+        return dist
+
 
 class MarginalInference(InferenceModule):
     """

@@ -171,9 +171,12 @@ class GreedyBustersAgent(BustersAgent):
                 if prob > maxProb:
                     maxProb = prob
                     maxPos = pos
-            mostLikelyPositions += [maxPos]
+            if maxPos is not None:
+                mostLikelyPositions += [maxPos]
 
         distances = {}
+        if len(mostLikelyPositions) < 1:
+            return Directions.STOP
         for action in legal:
             successorPosition = Actions.getSuccessor(pacmanPosition, action)
             minDistance = 10000000000
