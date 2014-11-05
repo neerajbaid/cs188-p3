@@ -19,6 +19,8 @@ import random
 import busters
 import game
 
+import pdb
+
 class InferenceModule:
     """
     An inference module tracks a belief distribution over a ghost's location.
@@ -263,8 +265,8 @@ class ParticleFilter(InferenceModule):
         """
         "*** YOUR CODE HERE ***"
         particles = []
-        for legalPosition in self.legalPositions:
-            particles += [legalPosition]*(self.numParticles/len(self.legalPositions))
+        for legalPosition in self.legalPositions:     
+            particles += [legalPosition]*(self.numParticles/len(self.legalPositions))  #TODO: what if more positions than particles.
         self.particles = particles
 
     def observe(self, observation, gameState):
@@ -298,6 +300,8 @@ class ParticleFilter(InferenceModule):
         emissionModel = busters.getObservationDistribution(noisyDistance)
         pacmanPosition = gameState.getPacmanPosition()
         "*** YOUR CODE HERE ***"
+
+
         if noisyDistance is None:
             self.particles = [self.getJailPosition()]*self.numParticles
             return
@@ -316,8 +320,11 @@ class ParticleFilter(InferenceModule):
             for loc in self.legalPositions:
                 relativeWeights[loc] = beliefs[loc] * emissionModel[util.manhattanDistance(pacmanPosition, loc)]
             self.particles = []
-            for loc, prob in relativeWeights.items():
-                self.particles += [loc]*int(self.numParticles*prob)
+            relativeWeights.normalize()
+            for i in xrange(self.numParticles):
+                self.particles+=[util.sample(relativeWeights)]
+            #for loc, prob in relativeWeights.items():
+            #    self.particles += [loc]*int(self.numParticles*prob)
 
     def elapseTime(self, gameState):
         """
@@ -333,8 +340,14 @@ class ParticleFilter(InferenceModule):
         util.sample(Counter object) is a helper method to generate a sample from
         a belief distribution.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        allPossible = util.Counter()
+
+        newParticles=[]
+
+        for p in self.particles:
+            newPosDist = self.getPositionDistribution(self.setGhostPosition(gameState,p))
+            newParticles+=[util.sample(newPosDist)]
+        self.particles=newParticles
 
     def getBeliefDistribution(self):
         """
