@@ -414,6 +414,7 @@ class JointParticleFilter:
         self.legalPositions = legalPositions
         self.particles=[]
         self.initializeParticles()
+        self.dead_ghosts=[False]*self.numGhosts
 
     def allTuples(self):
         tuples=self.legalPositions
@@ -500,17 +501,20 @@ class JointParticleFilter:
         """
         pacmanPosition = gameState.getPacmanPosition()
         noisyDistances = gameState.getNoisyGhostDistances()
+
+
         if len(noisyDistances) < self.numGhosts:
             return
         emissionModels = [busters.getObservationDistribution(dist) for dist in noisyDistances]
 
-
+        died=False
         for i in xrange(len(noisyDistances)):
             if noisyDistances[i] is None:
+                died=True
+                self.dead_ghosts[i]=True
                 for p in xrange(len(self.particles)):
                     self.particles[p]=self.getParticleWithGhostInJail(self.particles[p],i)        
                 #self.particles = [self.getJailPosition()]*self.numParticles
-
         relativeWeights = util.Counter()
         beliefs = self.getBeliefDistribution()
         allZero = True
@@ -521,6 +525,7 @@ class JointParticleFilter:
                 break
 
         if allZero:
+            #print "ALL ZERO"
             self.initializeParticles()
             for i in xrange(len(noisyDistances)):
                 if noisyDistances[i] is None or noisyDistances[i]==0:
@@ -528,10 +533,24 @@ class JointParticleFilter:
                         self.particles[p]=self.getParticleWithGhostInJail(self.particles[p],i) 
 
         else:
-            for t in self.allTuples():
-                prob=beliefs[t]
+            beliefs=self.getBeliefDistribution()
+            #print "here are beliefs", beliefs
+            #allPositions=self.allTuples()
+            #pdb.set_trace()
+            #for i in xrange(self.numGhosts):
+                #allPositions=allPositions+self.getJailPosition(i)
+
+            for t,prob in beliefs.items():
+                #print "trying t=", t
+                #print "prob=",prob
+                #prob=beliefs[t]
                 for ghost in xrange(len(t)):
-                    prob = prob * emissionModels[ghost][util.manhattanDistance(pacmanPosition, t[ghost])]
+                    #if(util.manhattanDistance(pacmanPosition,t[ghost])!=0):
+                    if(not self.dead_ghosts[ghost]):
+                        prob = prob * emissionModels[ghost][util.manhattanDistance(pacmanPosition, t[ghost])]
+                        #print "emission", emissionModels[ghost][util.manhattanDistance(pacmanPosition, t[ghost])]
+                        #print "prob", prob
+                #print "finalprob", prob
                 relativeWeights[t]=prob
 
             relativeWeights.normalize()
@@ -541,7 +560,6 @@ class JointParticleFilter:
             #for i in xrange(self.numParticles):
                 #self.particles+=[util.sample(relativeWeights)]
         #pdb.set_trace()
-    
 
     def getParticleWithGhostInJail(self, particle, ghostIndex):
         """
@@ -602,11 +620,11 @@ class JointParticleFilter:
             # now loop through and update each entry in newParticle...
 
             "*** YOUR CODE HERE ***"
-            for i in xrange(len(newParticle)):
+            for i in range(len(newParticle)):
                 newPosDist = getPositionDistributionForGhost(
-                setGhostPositions(gameState, list(oldParticle)), i, self.ghostAgents[i]
+                setGhostPositions(gameState, oldParticle), i, self.ghostAgents[i]
                 )
-                newParticle[i]=util.sample(newPosDist)
+            newParticle[i]=util.sample(newPosDist)
             "*** END YOUR CODE HERE ***"
             newParticles.append(tuple(newParticle))
         self.particles = newParticles
