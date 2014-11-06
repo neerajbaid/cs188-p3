@@ -18,7 +18,7 @@ import util
 import random
 import busters
 import game
-
+import math
 import pdb
 
 class InferenceModule:
@@ -455,8 +455,7 @@ class JointParticleFilter:
 #            particles += [legalPosition]*(self.numParticles/len(self.legalPositions))  #TODO: what if more positions than particles.
 
         for x in self.allTuples():
-            particles+=[x]*(self.numParticles/len(self.legalPositions))
-
+            particles+=[x]*int(self.numParticles/math.pow(len(self.legalPositions),self.numGhosts))
         self.particles=particles
 
 
@@ -624,7 +623,7 @@ class JointParticleFilter:
                 newPosDist = getPositionDistributionForGhost(
                 setGhostPositions(gameState, oldParticle), i, self.ghostAgents[i]
                 )
-            newParticle[i]=util.sample(newPosDist)
+                newParticle[i]=util.sample(newPosDist)
             "*** END YOUR CODE HERE ***"
             newParticles.append(tuple(newParticle))
         self.particles = newParticles
