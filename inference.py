@@ -391,6 +391,7 @@ class MarginalInference(InferenceModule):
         jointDistribution = jointInference.getBeliefDistribution()
         dist = util.Counter()
         for t, prob in jointDistribution.items():
+        #    pdb.set_trace()
             dist[t[self.index - 1]] += prob
         return dist
 
@@ -531,7 +532,7 @@ class JointParticleFilter:
                 prob=beliefs[t]
                 for ghost in xrange(len(t)):
                     prob = prob * emissionModels[ghost][util.manhattanDistance(pacmanPosition, t[ghost])]
-                relativeWeights[i]=prob
+                relativeWeights[t]=prob
 
             relativeWeights.normalize()
             self.particles = []
@@ -539,6 +540,7 @@ class JointParticleFilter:
                 self.particles += [loc]*int(self.numParticles*prob)
             #for i in xrange(self.numParticles):
                 #self.particles+=[util.sample(relativeWeights)]
+        #pdb.set_trace()
     
 
     def getParticleWithGhostInJail(self, particle, ghostIndex):
